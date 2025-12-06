@@ -1,4 +1,4 @@
-name: 自动部署tm到SAP
+name: 自动部署Tm到SAP
 
 on:
   workflow_dispatch:  # 只允许手动触发
@@ -50,7 +50,7 @@ on:
         default: ''
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE || 'yellowbins/tm:latest' }}
+  DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE || 'yellowbins/none:latest' }}
   MEMORY: ${{ secrets.MEMORY || '256M' }}
   DISK: ${{ secrets.DISK || '256M' }}
 
