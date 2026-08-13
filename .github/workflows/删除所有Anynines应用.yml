@@ -9,11 +9,11 @@ on:
         type: string
       EMAIL:
         description: 'EMAIL(Anynines邮箱必填)'
-        required: false
+        required: true
         default: ''
       PASSWORD:
         description: 'PASSWORD(Anynines密码必填)'
-        required: false
+        required: true
         default: ''
 
 jobs:
@@ -39,8 +39,8 @@ jobs:
         sudo apt-get install -y cf8-cli
     - name: Login to Cloud Foundry
       run: |
-        USER="${{ github.event.inputs.EMAIL || secrets.EMAIL }}"
-        PASSWORD="${{ github.event.inputs.PASSWORD || secrets.PASSWORD }}"
+        USER="${{ github.event.inputs.EMAIL }}"
+        PASSWORD="${{ github.event.inputs.PASSWORD }}"
 
         cf login -a "https://api.de.a9s.eu" -u "$USER" -p "$PASSWORD"
         # 获取组织列表
