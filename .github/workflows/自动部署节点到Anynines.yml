@@ -11,6 +11,14 @@ on:
         options:
           - ws直连节点
           - Argo隧道节点
+      EMAIL:
+        description: 'EMAIL(Anynines邮箱必填)'
+        required: true
+        default: ''
+      PASSWORD:
+        description: 'PASSWORD(Anynines密码必填)'
+        required: true
+        default: ''
       app_name:
         description: '应用名称（可选，留空则自动生成）'
         required: false
@@ -63,13 +71,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
-    - name: Install CF CLI
+    - name: 安装 Anynines CLI
       run: |
         wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
         echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
         sudo apt-get update
         sudo apt-get install -y cf8-cli
-    - name: Determine CF API endpoint and app name
+    - name: 生成app名称和选择docker镜像
       run: |
         # 设置API端点和生成随机字符串名称
         RANDOM_STR=$(head /dev/urandom | tr -dc 'a-z' | head -c 8)
@@ -92,9 +100,12 @@ jobs:
         echo "DOCKER_IMAGE=$DOCKER_IMAGE" >> "$GITHUB_ENV"
         echo "应用名称: $APP_NAME"
         echo "部署类型: $DOCKER_IMAGE"
-    - name: Login to Cloud Foundry
+    - name: 登录 Anynines CLI
       run: |
-        cf login -a "https://api.de.a9s.eu" -u "${{ secrets.EMAIL }}" -p "${{ secrets.PASSWORD }}"
+        USER="${{ github.event.inputs.EMAIL }}"
+        PASSWORD="${{ github.event.inputs.PASSWORD }}"
+
+        cf login -a "https://api.de.a9s.eu" -u "$USER" -p "$PASSWORD"
         # 获取组织列表
         ORG=$(cf orgs | sed -n '4p')
         echo "Selected org: $ORG"
@@ -109,7 +120,7 @@ jobs:
         fi
         
         cf target -o "$ORG" -s "$SPACE"
-    - name: Deploy application
+    - name: 部署app
       run: |
         if cf push ${{ env.APP_NAME }} --docker-image ${{ env.DOCKER_IMAGE }} -m ${{ env.MEMORY }} -k ${{ env.DISK }} --health-check-type port; then
           echo "Deployment successful"
@@ -119,7 +130,7 @@ jobs:
           exit 1
         fi
         
-    - name: Set environment variables
+    - name: 设置app环境变量
       shell: bash
       run: |
         set -euo pipefail
@@ -142,6 +153,7 @@ jobs:
         ARGO_PORT_INPUT="${{ github.event.inputs.ARGO_PORT }}"
         ARGO_DOMAIN_INPUT="${{ github.event.inputs.ARGO_DOMAIN }}"
         ARGO_AUTH_INPUT="${{ github.event.inputs.ARGO_AUTH }}"
+        SUB_PATH_INPUT="${{ github.event.inputs.SUB_PATH }}"
 
         # 基础环境变量
         cf set-env "${{ env.APP_NAME }}" NAME "Anynines"
@@ -176,7 +188,7 @@ jobs:
           fi
         fi
         
-    - name: Restage application
+    - name: 重启app
       run: |
         cf restage ${{ env.APP_NAME }}
     - name: Verify deployment
@@ -198,7 +210,7 @@ jobs:
           echo "⚠️ 未找到应用路由，请检查部署状态。"
         fi
 
-    - name: 🧹 清理旧的工作流运行记录
+    - name: 清理旧的工作流运行记录
       if: always()
       env:
         GH_TOKEN: ${{ github.token }}
