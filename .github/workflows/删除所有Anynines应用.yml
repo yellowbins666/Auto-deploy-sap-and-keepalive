@@ -7,6 +7,14 @@ on:
         description: '请输入 "确认删除" 以确认操作'
         required: true
         type: string
+        EMAIL:
+          description: 'EMAIL(Anynines邮箱必填)'
+          required: false
+          default: ''
+        PASSWORD:
+          description: 'PASSWORD(Anynines密码必填)'
+          required: false
+          default: ''
 
 jobs:
   delete-apps:
@@ -31,8 +39,10 @@ jobs:
         sudo apt-get install -y cf8-cli
     - name: Login to Cloud Foundry
       run: |
-        # 先登录以获取组织列表（需要用户名密码）
-        cf login -a "https://api.de.a9s.eu" -u "${{ secrets.EMAIL }}" -p "${{ secrets.PASSWORD }}"
+        USER="${{ github.event.inputs.EMAIL || secrets.EMAIL }}"
+        PASSWORD="${{ github.event.inputs.PASSWORD || secrets.PASSWORD }}"
+
+        cf login -a "https://api.de.a9s.eu" -u "$USER" -p "$PASSWORD"
         # 获取组织列表
         ORG=$(cf orgs | sed -n '4p')
         echo "Selected org: $ORG"
@@ -42,7 +52,7 @@ jobs:
         echo "Selected space: $SPACE"
         echo "SPACE=$SPACE" >> $GITHUB_ENV
         # 使用获取的组织和空间重新登录
-        cf login -a "https://api.de.a9s.eu" -u "${{ secrets.EMAIL }}" -p "${{ secrets.PASSWORD }}" -o "$ORG" -s "$SPACE"
+        cf login -a "https://api.de.a9s.eu" -u "$USER" -p "$PASSWORD" -o "$ORG" -s "$SPACE"
     - name: 获取所有应用
       id: get-apps
       run: |
